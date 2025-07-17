@@ -39,7 +39,7 @@ class CustomResNet50(nn.Module):
         return self.conv_base(x)
 
 # ===== LOAD FULL MODEL =====
-model = torch.load("KV-cat-dog.pth", map_location=device)
+model = torch.load("KV-dog-cat.pth", map_location=device)
 model = model.to(device)
 model.eval()
 

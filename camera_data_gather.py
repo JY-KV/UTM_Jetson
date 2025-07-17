@@ -3,6 +3,15 @@ import os
 import random
 import shutil
 
+gst_pipeline = (
+        "nvarguscamerasrc ! "
+        "video/x-raw(memory:NVMM), width=640, height=480, format=NV12 ! "
+        "nvvidconv ! "
+        "video/x-raw, format=BGRx ! "
+        "videoconvert ! "
+        "appsink"
+    )
+
 def capture_frames(class_name, num_frames):
     # Create directory for train images
     train_dir = f"train/{class_name}"
@@ -14,12 +23,24 @@ def capture_frames(class_name, num_frames):
     while frame_count < num_frames:
         ret, frame = cap.read()
         if ret:
-            # Save frame as image
+            # Display the frame with the frame counter and class name
+            display_frame = frame.copy()
+            cv2.putText(display_frame, f"Class: {class_name}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+            cv2.putText(display_frame, f"Frame: {frame_count}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+            cv2.imshow('Webcam', display_frame)
+
+            # Save the frame without any text and resize it to 400x400
+            resized_frame = cv2.resize(frame, (400, 400))
             img_path = f"{train_dir}/{frame_count}.jpg"
-            cv2.imwrite(img_path, frame)
+            cv2.imwrite(img_path, resized_frame)
             frame_count += 1
-        cv2.waitKey(100)  # Delay of 100ms between frames
+
+        # Delay of 100ms between frames to achieve 10 frames per second
+        if cv2.waitKey(100) & 0xFF == ord('q'):
+            break
+
     cap.release()
+    cv2.destroyAllWindows()
 
 def split_train_validation(class_name):
     # Create directory for validation images
@@ -47,7 +68,7 @@ def main():
         class_name = input(f"Enter the name for class {i+1}: ")
 
         # Capture frames for 1 minute (10 frames per second)
-        num_frames = 60 * 10
+        num_frames = 6 * 20
         capture_frames(class_name, num_frames)
 
         # Split train and validation images

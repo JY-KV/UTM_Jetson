@@ -2,8 +2,8 @@ import time
 import cv2
 import numpy as np
 import torch
-import torchvision.transforms as transforms
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
+
+# print(cv2.getBuildInformation())
 
 model = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd')
 utils = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_ssd_processing_utils')
@@ -27,15 +27,31 @@ classes = [
     'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ]
 
-# Initialize the webcam
-cap = cv2.VideoCapture(0)
+gst_pipeline = (
+        "nvarguscamerasrc ! "
+        "video/x-raw(memory:NVMM), width=640, height=480, format=NV12 ! "
+        "nvvidconv ! "
+        "video/x-raw, format=BGRx ! "
+        "videoconvert ! "
+        "appsink"
+    )
 
-# Get the height and width of the frame
-ret, frame = cap.read()
-height, width, _ = frame.shape
+# Initialize the webcam
+# cap = cv2.VideoCapture("nvarguscamerasrc ! 'video/x-raw(memory:NVMM),width=1280,height=720,framerate=30/1' ! nvvidconv ! appsink", cv2.CAP_GSTREAMER)
+cap = cv2.VideoCapture(0)
+if not cap.isOpened():
+    print("Unable to open camera")
+    exit()
 
 # Loop through the frames from the webcam
 while True:
+
+    # Get the height and width of the frame
+    ret, frame = cap.read()
+    if not ret:
+        break
+    height, width, _ = frame.shape
+
     start_time = time.time()
 
     # Read the frame from the webcam
@@ -59,25 +75,25 @@ while True:
         predictions = model(frame_tensor)
 
     # Inspect the structure of predictions
-    print("Type of predictions:", type(predictions))
+    # print("Type of predictions:", type(predictions))
 
     # If predictions is a list or tuple, inspect each element
-    if isinstance(predictions, (list, tuple)):
-        for i, pred in enumerate(predictions):
-            print(f"Shape of predictions[{i}]:", pred.shape)
-            print(f"Type of predictions[{i}]:", type(pred))
-            print(f"Sample data of predictions[{i}]:", pred)
+    # if isinstance(predictions, (list, tuple)):
+    #     for i, pred in enumerate(predictions):
+    #         print(f"Shape of predictions[{i}]:", pred.shape)
+    #         print(f"Type of predictions[{i}]:", type(pred))
+    #         print(f"Sample data of predictions[{i}]:", pred)
 
-    # If predictions is a tensor, inspect its shape and type
-    elif isinstance(predictions, torch.Tensor):
-        print("Shape of predictions:", predictions.shape)
-        print("Type of predictions:", predictions.dtype)
-        print("Sample data of predictions:", predictions)        
+    # # If predictions is a tensor, inspect its shape and type
+    # elif isinstance(predictions, torch.Tensor):
+    #     print("Shape of predictions:", predictions.shape)
+    #     print("Type of predictions:", predictions.dtype)
+    #     print("Sample data of predictions:", predictions)        
 
-    # pick the most confident prediction
-    exit()
+    # # pick the most confident prediction
+    # exit()
     results_per_input = utils.decode_results(predictions)
-    best_results_per_input = [utils.pick_best(results, 0.80) for results in results_per_input]
+    best_results_per_input = [utils.pick_best(results, 0.40) for results in results_per_input]
     boxes, labels, scores = best_results_per_input[0]
 
     # Loop through the predictions and draw bounding boxes and labels on the frame

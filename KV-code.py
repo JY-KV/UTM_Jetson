@@ -13,7 +13,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.backends.cudnn.benchmark = True
 
 # ===== CLASSES =====
-class_names = ['Cat', 'Dog']
+class_names = ['botol', 'papercup']
 
 # ===== OPTIONAL: Serial Setup =====
 # ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
@@ -39,7 +39,7 @@ class CustomResNet50(nn.Module):
         return self.conv_base(x)
 
 # ===== LOAD FULL MODEL =====
-model = torch.load("KV-cat-dog.pth", map_location=device)
+model = torch.load("KV-model.pth", map_location=device)
 model = model.to(device)
 model.eval()
 
